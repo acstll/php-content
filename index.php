@@ -17,23 +17,22 @@ $cache = StorageFactory::factory(array(
     ),
 ));
 
-$bullshit = new Content(array(
+$content = new Content(array(
 	'directory' => realpath('test/content'),
 	'cache' => $cache
 ));
 
 $path = $_GET['path'];
 
-$home = $bullshit->get($path);
+$home = $content->get($path);
 var_dump($home);
 print('<br><br>');
-$files = $bullshit->getAll();
 
-foreach ($files as $key => $value) {
-	echo $key . '<br>';
-	echo $value->getRelativePathname() . '<br>';
-	var_dump($value);
+foreach ($content as $key => $value) {
+	print_r($value);
 	echo '<br><br>';
 }
+
+echo 'COUNT: ' . $content->count();
 
 ?>

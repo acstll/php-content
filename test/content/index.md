@@ -4,6 +4,7 @@ list:
   - Soup
   - Beans
   - Bacon
+  - Jam
 ---
 # This is a heading
 

@@ -8,7 +8,7 @@ use Michelf\MarkdownExtra;
  * Content
  *
  * @author Arturo Castillo Delgado
- * @link http://github.com/acstll/bullshit-cms
+ * @link http://github.com/acstll/php-content
  * @license http://opensource.org/licenses/MIT
  * @version 0.1.0
  */
@@ -161,6 +161,7 @@ class Content implements \IteratorAggregate, \Countable
 
 	/**
 	 * Traverses content directory and sets $this->content.
+	 * Also sets $this->cursor.
 	 */
 	protected function refresh()
 	{

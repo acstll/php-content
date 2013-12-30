@@ -1,0 +1,28 @@
+{
+    "name": "acstll/bullshit-cms",
+    "description": "Flat-file bullshit",
+    "keywords": ["cms"],
+    "require": {
+        "symfony/finder": "~2.4",
+        "symfony/yaml": "~2.3",
+        "twig/twig": "1.14.*",
+        "michelf/php-markdown": "1.4.*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "3.7.*",
+        "zendframework/zend-cache": "2.2.5",
+        "zendframework/zend-serializer": "2.2.5"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "acstll",
+            "email": "19@8302.net"
+        }
+    ],
+    "autoload": {
+        "psr-0": {
+            "Content": ""
+        }
+    }
+}

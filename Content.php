@@ -121,14 +121,9 @@ class Content implements \IteratorAggregate, \Countable
 		if ($this->cursor < 0) {
 			throw new \LogicException('You must call one of get() or exists() methods first.');
 		}
-
-		$next_key = $this->cursor + 1;
-		$total = $this->count();
-
-		if ($next_key >= $total) return false;
-
-		$limit = new \LimitIterator($this->content, $next_key, 1);
+		$limit = $this->limit($this->cursor + 1);
 		$limit->rewind();
+		
 		return $limit->current();
 	}
 
@@ -140,15 +135,20 @@ class Content implements \IteratorAggregate, \Countable
 		if ($this->cursor < 0) {
 			throw new \LogicException('You must call one of get() or exists() methods first.');
 		}
-
-		$prev_key = $this->cursor - 1;
-		$total = $this->count();
-
-		if ($prev_key < 0 || $prev_key >= $total) return false;
-
-		$limit = new \LimitIterator($this->content, $prev_key, 1);
+		$limit = $this->limit($this->cursor - 1);
 		$limit->rewind();
+
 		return $limit->current();
+	}
+
+	/**
+	 * @return object LimitIterator
+	 */
+	protected function limit($offset = 0, $limit = 1)
+	{
+		$total = $this->count();
+		if ($offset < 0 || $offset >= $total) return false;
+		return new \LimitIterator($this->content, $offset, $limit);
 	}
 
 	/**

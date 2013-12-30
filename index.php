@@ -33,4 +33,6 @@ foreach ($content as $key => $value) {
 	echo '<br><br>';
 }
 
+var_dump($content->prev());
+
 ?>

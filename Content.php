@@ -15,8 +15,8 @@ use Michelf\MarkdownExtra;
 
 class Content implements \IteratorAggregate, \Countable
 {
-	private $content; // collection of pages (array)
-	private $cursor; // current iteration key
+	private $content; // collection of pages (Iterator instance)
+	private $cursor;
 	private $keypath; // "/foo" ($key)
 	private $hash; // hashed version of the keypath
 	private $filepath; // absolute path to file
@@ -113,6 +113,55 @@ class Content implements \IteratorAggregate, \Countable
 		return false;
 	}
 
+	/**
+	 * @return array Next "page" relative to $this->cursor
+	 */
+	public function next()
+	{
+		if ($this->cursor < 0) {
+			throw new \LogicException('You must call one of get() or exists() methods first.');
+		}
+
+		$next_key = $this->cursor + 1;
+		$total = $this->count();
+
+		if ($next_key >= $total) return false;
+
+		$limit = new \LimitIterator($this->content, $next_key, 1);
+		$limit->rewind();
+		return $limit->current();
+	}
+
+	/**
+	 * @return array Previous "page" relative to $this->cursor
+	 */
+	public function prev()
+	{
+		if ($this->cursor < 0) {
+			throw new \LogicException('You must call one of get() or exists() methods first.');
+		}
+
+		$prev_key = $this->cursor - 1;
+		$total = $this->count();
+
+		if ($prev_key < 0 || $prev_key >= $total) return false;
+
+		$limit = new \LimitIterator($this->content, $prev_key, 1);
+		$limit->rewind();
+		return $limit->current();
+	}
+
+	/**
+	 * @return number $this->cursor
+	 */
+	public function key()
+	{
+		return $this->cursor;
+	}
+
+	/**
+	 * Traverses content directory and sets $this->content.
+	 */
 	protected function refresh()
 	{
 		$content = array();
@@ -131,19 +180,23 @@ class Content implements \IteratorAggregate, \Countable
 			$content[] = array(
 				'path' => ($path === '/') ? $path : rtrim($path, '/'),
 				'filepath' => $filepath,
-				'meta' => $this->process($file->getContents(), true)['meta'],
+				'meta' => $this->process($file->getContents(), true),
 				'depth' => substr_count($path, '/') - 1
 			);
 		}
 
 		$this->content = new \ArrayIterator($content);
+
+		foreach ($this->content as $key => $value) {
+			if ($value['path'] == $this->keypath) $this->cursor = $key;
+		}
 	}
 
 	/**
-	 * Fetches content either from filesystem or cache
-	 * and sets $this->output.
-	 *
+	 * Fetches content either from filesystem or cache.
      * Process it if needed.
+     *
+     * @return array Page content
 	 */
 	protected function read()
 	{
@@ -180,18 +233,15 @@ class Content implements \IteratorAggregate, \Countable
 	protected function process($file_content, $only_meta = false)
 	{
 		$result = array();
+		$yaml = array();
 		$regexp = $this->config['delimiter_regexp'];
 
-		$raw = preg_replace($regexp, '', $file_content);
-		if ($only_meta == false) {
-			$result['content'] = MarkdownExtra::defaultTransform($raw);
-		}
+		if (preg_match($regexp, $file_content, $match)) $yaml = Yaml::parse($match[1]);
+		if ($only_meta) return $yaml;
 		
-		$yaml = array();
-		if (preg_match($regexp, $file_content, $match)) {
-			$yaml = Yaml::parse($match[1]);
-		}
-
+		$raw = preg_replace($regexp, '', $file_content);
+		if ($only_meta == false) $result['content'] = MarkdownExtra::defaultTransform($raw);
+		
 		$result['meta'] = $yaml;
 		$result['path'] = $this->keypath;
 		$result['raw'] = $raw;

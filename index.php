@@ -33,6 +33,4 @@ foreach ($content as $key => $value) {
 	echo '<br><br>';
 }
 
-echo 'COUNT: ' . $content->count();
-
 ?>

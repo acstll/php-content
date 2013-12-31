@@ -7,6 +7,8 @@ use Michelf\MarkdownExtra;
 /**
  * Content
  *
+ * Flat-file content management utility.
+ *
  * @author Arturo Castillo Delgado
  * @link http://github.com/acstll/php-content
  * @license http://opensource.org/licenses/MIT
@@ -15,10 +17,10 @@ use Michelf\MarkdownExtra;
 
 class Content implements \IteratorAggregate, \Countable
 {
-	private $content; // collection of pages (Iterator instance)
+	private $content; // \ArrayIterator, collection of pages
 	private $cursor;
-	private $keypath; // "/foo" ($key)
-	private $hash; // hashed version of the keypath
+	private $keypath; // url path e.g. "/foo"
+	private $hash; // hashed version of $keypath
 	private $filepath; // absolute path to file
 	private $clear = array(); // array of cache keys to flush
 	private $config;
@@ -29,7 +31,7 @@ class Content implements \IteratorAggregate, \Countable
 		'extension' => '.md'
 	);
 
-	function __construct($config)
+	function __construct($config = array())
 	{
 		$this->config = array_merge($this->defaults, $config);
 		$this->cursor = -1;
@@ -46,30 +48,38 @@ class Content implements \IteratorAggregate, \Countable
 		}
 	}
 
+	 /**
+     * Returns an Iterator for the current content directory.
+     *
+     * This method implements the IteratorAggregate interface.
+     *
+     * @return \Iterator An iterator
+     */
 	public function getIterator()
 	{
 		if (!($this->content instanceof \ArrayIterator)) $this->refresh();
 		return $this->content;
 	}
 
+	/**
+	 * @return int Total number of pages in content directory
+	 */
 	public function count()
 	{
 		return iterator_count($this->getIterator());
 	}
 
 	/**
-	 * Returns array with content corresponding to key.
+	 * Returns processed content from a single "page", corresponding to a keypath.
+	 * It also returns an \ArrayIterator instance if called with no argument.
      *
      * @param string $keypath Path built from URI
      *
-     * @return mixed Array when found, false otherwise
+     * @return mixed Array when found, false otherwise, or \ArrayIterator
 	 */
 	public function get($keypath)
 	{
-		if (!isset($keypath)) {
-			return false; // temp
-			// refresh and return $content!
-		}
+		if (!isset($keypath)) return $this->getIterator();
 		if (!$this->exists($keypath)) return false;
 		
 		return $this->read();
@@ -118,10 +128,7 @@ class Content implements \IteratorAggregate, \Countable
 	 */
 	public function next()
 	{
-		if ($this->cursor < 0) {
-			throw new \LogicException('You must call one of get() or exists() methods first.');
-		}
-		$limit = $this->limit($this->cursor + 1);
+		$limit = $this->limit(1, $this->cursor + 1);
 		$limit->rewind();
 		
 		return $limit->current();
@@ -132,27 +139,30 @@ class Content implements \IteratorAggregate, \Countable
 	 */
 	public function prev()
 	{
-		if ($this->cursor < 0) {
-			throw new \LogicException('You must call one of get() or exists() methods first.');
-		}
-		$limit = $this->limit($this->cursor - 1);
+		$limit = $this->limit(1, $this->cursor - 1);
 		$limit->rewind();
 
 		return $limit->current();
 	}
 
 	/**
-	 * @return object LimitIterator
+	 * @param int $limit
+	 * @param int $offset
+	 *
+	 * @return \LimitIterator
 	 */
-	protected function limit($offset = 0, $limit = 1)
+	public function limit($limit = 1, $offset = 0)
 	{
+		if (!($this->content instanceof \ArrayIterator)) $this->refresh();
 		$total = $this->count();
+		
 		if ($offset < 0 || $offset >= $total) return false;
+
 		return new \LimitIterator($this->content, $offset, $limit);
 	}
 
 	/**
-	 * @return number $this->cursor
+	 * @return int $this->cursor
 	 */
 	public function key()
 	{
@@ -189,7 +199,10 @@ class Content implements \IteratorAggregate, \Countable
 		$this->content = new \ArrayIterator($content);
 
 		foreach ($this->content as $key => $value) {
-			if ($value['path'] == $this->keypath) $this->cursor = $key;
+			if ($value['path'] == $this->keypath) {
+				$this->cursor = $key;
+				break;
+			}
 		}
 	}
 

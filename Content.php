@@ -28,7 +28,8 @@ class Content implements \IteratorAggregate, \Countable
 		'directory' => false,
 		'cache' => false,
 		'delimiter_regexp' => '#---(.*?)---#sm',
-		'extension' => '.md'
+		'extension' => '.md',
+		'filter' => false
 	);
 
 	function __construct($config = array())
@@ -57,7 +58,7 @@ class Content implements \IteratorAggregate, \Countable
      */
 	public function getIterator()
 	{
-		if (!($this->content instanceof \ArrayIterator)) $this->refresh();
+		if (!($this->content instanceof \ArrayIterator)) $this->build();
 		return $this->content;
 	}
 
@@ -126,7 +127,7 @@ class Content implements \IteratorAggregate, \Countable
 	/**
 	 * @return array Next "page" relative to $this->cursor
 	 */
-	public function next()
+	public function getNext()
 	{
 		$limit = $this->limit(1, $this->cursor + 1);
 		$limit->rewind();
@@ -137,7 +138,7 @@ class Content implements \IteratorAggregate, \Countable
 	/**
 	 * @return array Previous "page" relative to $this->cursor
 	 */
-	public function prev()
+	public function getPrev()
 	{
 		$limit = $this->limit(1, $this->cursor - 1);
 		$limit->rewind();
@@ -153,7 +154,7 @@ class Content implements \IteratorAggregate, \Countable
 	 */
 	public function limit($limit = 1, $offset = 0)
 	{
-		if (!($this->content instanceof \ArrayIterator)) $this->refresh();
+		if (!($this->content instanceof \ArrayIterator)) $this->build();
 		$total = $this->count();
 		
 		if ($offset < 0 || $offset >= $total) return false;
@@ -173,12 +174,13 @@ class Content implements \IteratorAggregate, \Countable
 	 * Traverses content directory and sets $this->content.
 	 * Also sets $this->cursor.
 	 */
-	protected function refresh()
+	protected function build()
 	{
 		$content = array();
 		$finder = new Finder();
 		$ext = $this->config['extension'];
 		$directory = $this->config['directory'];
+		$filter = $this->config['filter'];
 
 		$finder
 			->files()
@@ -197,6 +199,7 @@ class Content implements \IteratorAggregate, \Countable
 		}
 
 		$this->content = new \ArrayIterator($content);
+		if ($filter) $this->content = new $filter($this->content);
 
 		foreach ($this->content as $key => $value) {
 			if ($value['path'] == $this->keypath) {

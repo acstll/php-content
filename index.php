@@ -17,9 +17,20 @@ $cache = StorageFactory::factory(array(
     ),
 ));
 
+class Filter extends \FilterIterator
+{
+    public function accept()
+    {
+        $value = $this->current();
+        return !!($value['meta']['title'] == 'The real bullshit');
+        // return in_array('Blai', $value['meta']['names']);
+    }
+}
+
 $content = new Content(array(
 	'directory' => realpath('test/content'),
-	'cache' => $cache
+	'cache' => $cache,
+    'filter' => Filter
 ));
 
 $path = $_GET['path'];

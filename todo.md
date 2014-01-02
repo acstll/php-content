@@ -1,2 +1,2 @@
 - store content array in cache (need to figure out directory tree latest mtime)
-- the possibility to use a remote path as 'directory'
+- the possibility to use a remote path as 'directory'?

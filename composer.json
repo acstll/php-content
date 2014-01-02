@@ -1,6 +1,6 @@
 {
-    "name": "acstll/bullshit-cms",
-    "description": "Flat-file bullshit",
+    "name": "acstll/php-content",
+    "description": "Flat-file content management utility",
     "keywords": ["cms"],
     "require": {
         "symfony/finder": "~2.4",

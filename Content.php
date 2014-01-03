@@ -29,7 +29,9 @@ class Content implements \IteratorAggregate, \Countable
 		'cache' => false,
 		'delimiter_regexp' => '#---(.*?)---#sm',
 		'extension' => '.md',
-		'filter' => false
+		'callback' => false,
+		'sort_key' => NULL,
+		'order' => 'asc'
 	);
 
 	function __construct($config = array())
@@ -180,7 +182,8 @@ class Content implements \IteratorAggregate, \Countable
 		$finder = new Finder();
 		$ext = $this->config['extension'];
 		$directory = $this->config['directory'];
-		$filter = $this->config['filter'];
+		$callback = $this->config['callback'];
+		$sort_key = $this->config['sort_key'];
 
 		$finder
 			->files()
@@ -190,16 +193,25 @@ class Content implements \IteratorAggregate, \Countable
 
 		foreach ($finder as $filepath => $file) {
 			$path = str_replace([$directory, 'index' . $ext, $ext], '', $filepath);
-			$content[] = array(
+			$meta = $this->process($file->getContents(), true);
+			$data = array(
 				'path' => ($path === '/') ? $path : rtrim($path, '/'),
 				'filepath' => $filepath,
-				'meta' => $this->process($file->getContents(), true),
+				'meta' => $meta,
 				'depth' => substr_count($path, '/') - 1
 			);
+
+			if (isset($meta[$sort_key])) $content[$meta[$sort_key]] = $data;
+			else $content[] = $data;
 		}
 
-		$this->content = new \ArrayIterator($content);
-		if ($filter) $this->content = new $filter($this->content);
+		$this->sort($content);
+
+		if (is_callable($callback)) {
+			$this->content = call_user_func($callback, $content);
+		} else {
+			$this->content = new \ArrayIterator($content);
+		}
 
 		foreach ($this->content as $key => $value) {
 			if ($value['path'] == $this->keypath) {
@@ -207,6 +219,18 @@ class Content implements \IteratorAggregate, \Countable
 				break;
 			}
 		}
+	}
+
+	/**
+	 * Sorts content array before creating the Iterator.
+     *
+     * @param array Content
+     */
+	protected function sort(&$array)
+	{
+		if (is_null($this->config['sort_key'])) return $array;
+		if ($this->config['order'] == 'desc') krsort($array);
+		else ksort($array);
 	}
 
 	/**

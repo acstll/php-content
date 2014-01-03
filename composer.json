@@ -1,6 +1,5 @@
 {
-    "name": "acstll/php-content",
-    "version": "0.1.0",
+    "name": "acstll/content",
     "description": "Flat-file content management utility",
     "keywords": ["cms"],
     "require": {

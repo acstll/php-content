@@ -60,7 +60,7 @@ class Content implements \IteratorAggregate, \Countable
      */
 	public function getIterator()
 	{
-		if (!($this->content instanceof \ArrayIterator)) $this->build();
+		if (!($this->content instanceof \Traversable)) $this->build();
 		return $this->content;
 	}
 
@@ -131,10 +131,15 @@ class Content implements \IteratorAggregate, \Countable
 	 */
 	public function getNext()
 	{
+		if (!($this->content instanceof \Traversable)) $this->build();
 		$limit = $this->limit(1, $this->cursor + 1);
-		$limit->rewind();
-		
-		return $limit->current();
+
+		if (!$limit) {
+			return false;
+		} else {
+			$limit->rewind();
+			return $limit->current();
+		}
 	}
 
 	/**
@@ -142,10 +147,15 @@ class Content implements \IteratorAggregate, \Countable
 	 */
 	public function getPrev()
 	{
+		if (!($this->content instanceof \Traversable)) $this->build();
 		$limit = $this->limit(1, $this->cursor - 1);
-		$limit->rewind();
 
-		return $limit->current();
+		if (!$limit) {
+			return false;
+		} else {
+			$limit->rewind();
+			return $limit->current();
+		}
 	}
 
 	/**
@@ -156,7 +166,7 @@ class Content implements \IteratorAggregate, \Countable
 	 */
 	public function limit($limit = 1, $offset = 0)
 	{
-		if (!($this->content instanceof \ArrayIterator)) $this->build();
+		if (!($this->content instanceof \Traversable)) $this->build();
 		$total = $this->count();
 		
 		if ($offset < 0 || $offset >= $total) return false;
@@ -213,11 +223,13 @@ class Content implements \IteratorAggregate, \Countable
 			$this->content = new \ArrayIterator($content);
 		}
 
-		foreach ($this->content as $key => $value) {
+		$index = 0;
+		foreach ($this->content as $value) {
 			if ($value['path'] == $this->keypath) {
-				$this->cursor = $key;
+				$this->cursor = $index;
 				break;
 			}
+			$index++;
 		}
 	}
 
